@@ -1,4 +1,4 @@
-use crate::constant::{HEADER_LEN, VERSION};
+use crate::constant::{HEADER_LEN, MAGIC, VERSION};
 use crate::db::schema::*;
 use crate::file::file;
 use std::convert::TryInto;
@@ -9,7 +9,7 @@ use std::os::unix::prelude::FileExt;
 impl file::FileDb {
     pub fn create_header() -> io::Result<Dbheader> {
         Ok(Dbheader {
-            magic: crate::constant::MAGIC,
+            magic: MAGIC,
             count: 0,
             version: VERSION,
             filesize: HEADER_LEN,
@@ -55,10 +55,10 @@ impl file::FileDb {
         })
     }
     pub fn validate_header(header: &Dbheader, file: &mut File) -> io::Result<()> {
-        if header.magic != crate::constant::MAGIC {
+        if header.magic != MAGIC {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid magic"));
         }
-        if header.version != crate::constant::VERSION {
+        if header.version != VERSION {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "Invalid version",
@@ -81,8 +81,8 @@ impl file::FileDb {
         file.seek(SeekFrom::Start(9))?;
         file.read_exact(&mut buf)?;
         let existing = u64::from_le_bytes(buf);
-        let udpated = existing.saturating_add(file_size);
-        buf.copy_from_slice(&udpated.to_le_bytes());
+        let updated = existing.saturating_add(file_size);
+        buf.copy_from_slice(&updated.to_le_bytes());
         file.write_at(&buf, 9)
     }
 }

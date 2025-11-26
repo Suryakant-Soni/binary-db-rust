@@ -55,7 +55,7 @@ impl FileDb {
         bytes_written += address_bytes.len() as u64;
         self.file.write_all(&employee.hours.to_le_bytes())?;
         bytes_written += 4;
-        Ok((bytes_written))
+        Ok(bytes_written)
     }
 
     pub fn read_one_employee(&mut self) -> io::Result<(Option<(Employee, u64)>)> {
@@ -91,15 +91,15 @@ impl FileDb {
         bytes_read += 4;
         let hours = u32::from_le_bytes(hours_buf);
         let emp = Employee {
-            name: name,
-            address: address,
-            hours: hours,
+            name,
+            address,
+            hours,
         };
         Ok(Some((emp, bytes_read)))
     }
 
     pub fn list_employees(&mut self) -> io::Result<(Vec<Employee>)> {
-        self.file.seek(SeekFrom::Start(HEADER_LEN as u64))?;
+        self.file.seek(SeekFrom::Start(HEADER_LEN))?;
         let mut employees = Vec::<Employee>::new();
         loop {
             match self.read_one_employee()? {

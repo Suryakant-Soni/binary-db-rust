@@ -1,5 +1,5 @@
 [package]
-name = "databse-tcp-rust"
+name = "binary-db"
 version = "0.1.0"
 edition = "2021"
 

@@ -1,5 +1,5 @@
-use crate::constant;
-use crate::file;
+use binary_db::FileDb;
+use binary_db::FILE_NAME;
 use clap::Parser;
 use std::io;
 use std::path::Path;
@@ -18,7 +18,7 @@ pub struct DBCli {
 
 impl DBCli {
     pub fn run_cli(&self) -> io::Result<()> {
-        let mut file_obj = file::file::FileDb::orchestrate_file_db(Path::new(constant::FILE_NAME))?;
+        let mut file_obj = FileDb::orchestrate_file_db(Path::new(FILE_NAME))?;
         if self.get_flag_list_employees() {
             let employees = file_obj.list_employees()?;
             println!("employees - {:?}", employees);
