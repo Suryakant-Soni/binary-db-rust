@@ -119,10 +119,13 @@ impl FileDb {
                 "invalid employee details - need 3 values with comma separated",
             ));
         }
+        let hours = parts[2]
+            .parse::<u32>()
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid hours value"))?;
         let emp = Employee {
             name: parts[0].to_string(),
             address: parts[1].to_string(),
-            hours: parts[2].parse::<u32>().unwrap(),
+            hours: hours,
         };
         let size = self.write_one_employee(emp)?;
         Self::update_filesize_in_header(&mut self.file, size)?;

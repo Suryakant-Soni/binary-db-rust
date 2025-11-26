@@ -1,8 +1,4 @@
 mod cli;
-mod constant;
-mod db;
-mod file;
-
 use crate::cli::db_cli::DBCli;
 use clap::Parser;
 // This import is now valid and brings the trait into scope.

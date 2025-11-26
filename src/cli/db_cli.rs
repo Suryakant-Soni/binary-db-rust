@@ -9,11 +9,11 @@ use std::path::Path;
 pub struct DBCli {
     // Create new employee
     #[arg(short = 'a', long)]
-    addemployee: Option<String>,
+    add_employee: Option<String>,
 
     #[arg(short = 'l', long)]
     // List all employees
-    listemployees: bool,
+    list_employees: bool,
 }
 
 impl DBCli {
@@ -30,9 +30,9 @@ impl DBCli {
     }
 
     fn get_flag_list_employees(&self) -> bool {
-        self.listemployees
+        self.list_employees
     }
     fn get_flag_add_employee(&self) -> &Option<String> {
-        &self.addemployee
+        &self.add_employee
     }
 }

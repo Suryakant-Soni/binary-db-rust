@@ -5,7 +5,6 @@ use std::convert::TryInto;
 use std::fs::File;
 use std::io;
 use std::io::{Read, Seek, SeekFrom, Write};
-use std::os::unix::prelude::FileExt;
 impl file::FileDb {
     pub fn create_header() -> io::Result<Dbheader> {
         Ok(Dbheader {
@@ -19,7 +18,7 @@ impl file::FileDb {
     pub fn write_header(file: &mut File, header: &Dbheader) -> io::Result<()> {
         file.seek(SeekFrom::Start(0))?;
         // create a buffer which will be pushed to file
-        let mut buf = [0u8; 17];
+        let mut buf = [0u8; HEADER_LEN as usize];
         buf[0..4].copy_from_slice(&header.magic);
         buf[4] = header.version;
         buf[5..9].copy_from_slice(&header.count.to_le_bytes());
@@ -30,7 +29,7 @@ impl file::FileDb {
     }
 
     pub fn read_header(file: &mut File) -> io::Result<Dbheader> {
-        let mut buf = [0u8; 17];
+        let mut buf = [0u8; HEADER_LEN as usize];
         file.seek(SeekFrom::Start(0))?;
         file.read_exact(&mut buf)?;
         let magic = buf[0..4]
@@ -76,13 +75,14 @@ impl file::FileDb {
         }
         Ok(())
     }
-    pub fn update_filesize_in_header(file: &mut File, file_size: u64) -> io::Result<(usize)> {
+    pub fn update_filesize_in_header(file: &mut File, file_size: u64) -> io::Result<()> {
         let mut buf = [0u8; 8];
         file.seek(SeekFrom::Start(9))?;
         file.read_exact(&mut buf)?;
         let existing = u64::from_le_bytes(buf);
         let updated = existing.saturating_add(file_size);
         buf.copy_from_slice(&updated.to_le_bytes());
-        file.write_at(&buf, 9)
+        file.seek(SeekFrom::Start(9))?;
+        file.write_all(&mut buf)
     }
 }
