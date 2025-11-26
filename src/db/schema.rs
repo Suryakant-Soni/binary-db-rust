@@ -4,7 +4,7 @@ pub struct Dbheader {
     pub count: u32,
     pub filesize: u64,
 }
-
+#[derive(Debug)]
 pub struct Employee {
     pub name: String,
     pub address: String,

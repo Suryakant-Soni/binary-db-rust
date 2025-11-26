@@ -33,7 +33,9 @@ impl FileDb {
         Ok(Self { file })
     }
 
-    pub fn write_one_employee(&mut self, employee: Employee) -> io::Result<()> {
+    pub fn write_one_employee(&mut self, employee: Employee) -> io::Result<(u64)> {
+        self.file.seek(SeekFrom::End(0))?;
+        let mut bytes_written = 0;
         // get name bytes, write it
         let name_bytes = employee.name.as_bytes();
         let address_bytes = employee.address.as_bytes();
@@ -44,17 +46,28 @@ impl FileDb {
         // same with address
         //write hours
         self.file.write_all(&name_len.to_le_bytes())?;
+        bytes_written += 4;
         self.file.write_all(name_bytes)?;
+        bytes_written += name_bytes.len() as u64;
         self.file.write_all(&address_len.to_le_bytes())?;
+        bytes_written += 4;
         self.file.write_all(address_bytes)?;
+        bytes_written += address_bytes.len() as u64;
         self.file.write_all(&employee.hours.to_le_bytes())?;
-        Ok(())
+        bytes_written += 4;
+        Ok((bytes_written))
     }
 
     pub fn read_one_employee(&mut self) -> io::Result<(Option<(Employee, u64)>)> {
         let mut bytes_read: u64 = 0;
         let mut len_buf = [0u8; 4];
-        self.file.read_exact(&mut len_buf)?;
+        match self.file.read_exact(&mut len_buf) {
+            Ok(_) => {}
+            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => {
+                return Ok(None);
+            }
+            Err(e) => return Err(e),
+        }
         bytes_read += 4;
         let mut field_len = u32::from_le_bytes(len_buf) as usize;
         let mut name_buf = vec![0u8; field_len];
@@ -100,7 +113,7 @@ impl FileDb {
     pub fn add_employee(&mut self, emp_string: &str) -> io::Result<()> {
         //split into vector
         let parts: Vec<&str> = emp_string.split(',').collect();
-        if parts.len() != 2 {
+        if parts.len() != 3 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "invalid employee details - need 3 values with comma separated",
@@ -111,6 +124,8 @@ impl FileDb {
             address: parts[1].to_string(),
             hours: parts[2].parse::<u32>().unwrap(),
         };
-        self.write_one_employee(emp)
+        let size = self.write_one_employee(emp)?;
+        Self::update_filesize_in_header(&mut self.file, size)?;
+        Ok(())
     }
 }

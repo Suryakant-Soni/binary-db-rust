@@ -9,5 +9,6 @@ use clap::Parser;
 
 fn main() {
     let args = DBCli::parse(); // The `parse()` method is now available.
-    args.run_cli();
+    let res = args.run_cli();
+    println!("{:#?}", res);
 }

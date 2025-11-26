@@ -1,18 +1,18 @@
-use crate::file::file;
-
-use crate::constant::VERSION;
+use crate::constant::{HEADER_LEN, VERSION};
 use crate::db::schema::*;
+use crate::file::file;
 use std::convert::TryInto;
 use std::fs::File;
 use std::io;
 use std::io::{Read, Seek, SeekFrom, Write};
+use std::os::unix::prelude::FileExt;
 impl file::FileDb {
     pub fn create_header() -> io::Result<Dbheader> {
         Ok(Dbheader {
             magic: crate::constant::MAGIC,
             count: 0,
             version: VERSION,
-            filesize: std::mem::size_of::<Dbheader>() as u64,
+            filesize: HEADER_LEN,
         })
     }
 
@@ -21,8 +21,8 @@ impl file::FileDb {
         // create a buffer which will be pushed to file
         let mut buf = [0u8; 17];
         buf[0..4].copy_from_slice(&header.magic);
-        buf[4..5].copy_from_slice(&header.count.to_le_bytes());
-        buf[5..9].copy_from_slice(&header.version.to_le_bytes());
+        buf[4] = header.version;
+        buf[5..9].copy_from_slice(&header.count.to_le_bytes());
         buf[9..17].copy_from_slice(&header.filesize.to_le_bytes());
         file.write_all(&buf)?;
         file.flush()?;
@@ -69,8 +69,20 @@ impl file::FileDb {
         let real_size = file.metadata()?.len();
         file.seek(SeekFrom::Start(current_pos))?;
         if real_size != header.filesize {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "Invalid size"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "size mismatch btw file and header",
+            ));
         }
         Ok(())
+    }
+    pub fn update_filesize_in_header(file: &mut File, file_size: u64) -> io::Result<(usize)> {
+        let mut buf = [0u8; 8];
+        file.seek(SeekFrom::Start(9))?;
+        file.read_exact(&mut buf)?;
+        let existing = u64::from_le_bytes(buf);
+        let udpated = existing.saturating_add(file_size);
+        buf.copy_from_slice(&udpated.to_le_bytes());
+        file.write_at(&buf, 9)
     }
 }
